@@ -1,8 +1,8 @@
-"""change field type
+"""add orm relations
 
-Revision ID: 391ffc5cb692
-Revises: a93342fe0973
-Create Date: 2024-05-04 22:00:20.791748
+Revision ID: 4b3ac16b97b3
+Revises: 71f7397d3a90
+Create Date: 2024-05-07 18:09:22.727223
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '391ffc5cb692'
-down_revision: Union[str, None] = 'a93342fe0973'
+revision: str = '4b3ac16b97b3'
+down_revision: Union[str, None] = '71f7397d3a90'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

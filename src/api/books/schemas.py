@@ -11,11 +11,17 @@ class BookStatus(str, Enum):
         return self.value
 
 
-class BookSchema(BaseModel):
-    id: int
+class ProgressSchema(BaseModel):
+    current_pages: int
+    start_reading_date: date
+
+
+class BookAdd(BaseModel):
     title: str
     author: str | None
     volume: int
-    status: BookStatus
-    current_pages: int
-    start_reading_date: date
+
+
+class BookSchema(BookAdd):
+    progress: ProgressSchema
+    id: int
