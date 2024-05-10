@@ -1,15 +1,16 @@
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.books.models import Book, Progress
-from api.books.schemas import BookAdd
+from api.books.schemas import BookAdd, BookSchema
 from api.books.utils import convert_data
 
 
-async def get_books_from_db(session: AsyncSession, user_id: int):
+async def get_books_from_db(session: AsyncSession,
+                            user_id: int) -> list[BookSchema]:
     query = (select(Book.id, Book.title, Book.author, Book.volume, Book.status,
                     Progress.current_pages, Progress.start_reading_date)
              .join(Progress, Book.id == Progress.book_id)
@@ -21,7 +22,7 @@ async def get_books_from_db(session: AsyncSession, user_id: int):
 
 
 async def get_book_from_db(session: AsyncSession,
-                           book_id: int, tg_id: int):
+                           book_id: int, tg_id: int) -> BookSchema:
     query = (select(Book.id, Book.title, Book.author, Book.volume, Book.status,
                     Progress.current_pages, Progress.start_reading_date)
              .join(Progress)
@@ -33,21 +34,22 @@ async def get_book_from_db(session: AsyncSession,
 
 
 async def insert_book(session: AsyncSession,
-                      data: BookAdd, user_id: int):
+                      data: BookAdd, user_id: int) -> Book | None:
     book = Book(**data.dict(), status='Читает', user_id=user_id)
     progress = Progress(book=book, current_pages=0, start_reading_date=datetime.now().date())
     book.progress = progress
     try:
         session.add(book)
+        await session.commit()
     except IntegrityError:
         await session.rollback()
+        raise 'Книга уже существует'
     else:
-        await session.commit()
         return book
 
 
 async def update_book_progress(session: AsyncSession,
-                               book_id: int, tg_id: int, page: int):
+                               book_id: int, tg_id: int, page: int) -> Book | None:
     query = select(Book).where((Book.id == book_id) & (Book.user_id == tg_id))
     data = await session.execute(query)
     book = data.scalar()
@@ -64,4 +66,11 @@ async def update_book_progress(session: AsyncSession,
         return None
 
 
-
+async def delete_book_from_db(session: AsyncSession,
+                              book_id: int, tg_id: int):
+    query = select(Book).where((Book.id == book_id) & (Book.user_id == tg_id))
+    data = await session.execute(query)
+    book = data.scalar()
+    await session.delete(book.progress)
+    await session.delete(book)
+    await session.commit()

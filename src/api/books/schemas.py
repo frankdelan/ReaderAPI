@@ -1,4 +1,6 @@
 from datetime import date
+from typing import Optional
+
 from pydantic import BaseModel
 from enum import Enum
 
@@ -18,10 +20,11 @@ class ProgressSchema(BaseModel):
 
 class BookAdd(BaseModel):
     title: str
-    author: str | None
+    author: Optional[str]
     volume: int
 
 
 class BookSchema(BookAdd):
     progress: ProgressSchema
+    status: BookStatus
     id: int

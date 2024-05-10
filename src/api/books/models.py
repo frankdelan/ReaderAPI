@@ -18,17 +18,18 @@ class Book(Base):
     status: Mapped[str] = mapped_column(default='Читает')
 
     user_id: Mapped[int] = mapped_column(ForeignKey('user.tg_id'))
-    user: Mapped[User] = relationship(User, cascade='delete')
+    user: Mapped[User] = relationship(User)
 
     progress: Mapped["Progress"] = relationship(back_populates="book", lazy='selectin')
 
 
 class Progress(Base):
     __tablename__ = 'progress'
+
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
-    book_id: Mapped[int] = mapped_column(ForeignKey('book.id'))
-    book: Mapped[Book] = relationship(Book, cascade='delete')
+    book_id: Mapped[int] = mapped_column(ForeignKey('book.id', ondelete="CASCADE"))
+    book: Mapped[Book] = relationship(Book)
 
     current_pages: Mapped[int] = mapped_column(default=0)
     start_reading_date = mapped_column(Date, default=datetime.now().date())

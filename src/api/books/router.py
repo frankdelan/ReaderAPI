@@ -1,7 +1,11 @@
-from fastapi import APIRouter, Depends
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.books.queries import get_books_from_db, get_book_from_db, insert_book, update_book_progress
+from api.books.models import Book
+from api.books.queries import get_books_from_db, get_book_from_db, insert_book, update_book_progress, \
+    delete_book_from_db
 from database import get_async_session
 from api.books.schemas import BookSchema, BookAdd
 
@@ -18,9 +22,11 @@ async def get_books(user_id: int,
     try:
         books: list[BookSchema] = await get_books_from_db(session, user_id)
     except Exception as e:
-        return {'status': 'error',
-                'data': None,
-                'detail': str(e)}
+        raise HTTPException(status_code=404, detail={
+            "status": "error",
+            "data": None,
+            "detail": str(e)
+        })
     return {'status': 'success',
             'data': books,
             'detail': None}
@@ -30,11 +36,13 @@ async def get_books(user_id: int,
 async def get_book_by_id(book_id: int, user_id: int,
                          session: AsyncSession = Depends(get_async_session)):
     try:
-        book = await get_book_from_db(session, book_id, user_id)
+        book: BookSchema = await get_book_from_db(session, book_id, user_id)
     except Exception as e:
-        return {'status': 'error',
-                'data': None,
-                'detail': str(e)}
+        raise HTTPException(status_code=404, detail={
+            "status": "error",
+            "data": None,
+            "detail": str(e)
+        })
     return {'status': 'success',
             'data': book,
             'detail': None}
@@ -44,11 +52,13 @@ async def get_book_by_id(book_id: int, user_id: int,
 async def add_book(book: BookAdd, tg_id: int,
                    session: AsyncSession = Depends(get_async_session)):
     try:
-        book = await insert_book(session, book, tg_id)
+        book: Optional[Book] = await insert_book(session, book, tg_id)
     except Exception as e:
-        return {'status': 'error',
-                'data': None,
-                'detail': str(e)}
+        raise HTTPException(status_code=404, detail={
+            "status": "error",
+            "data": None,
+            "detail": str(e)
+        })
     return {'status': 'error',
             'data': book,
             'detail': None}
@@ -58,11 +68,34 @@ async def add_book(book: BookAdd, tg_id: int,
 async def change_book_progress(book_id: int, user_id: int, current_page: int,
                                session: AsyncSession = Depends(get_async_session)):
     try:
-        book = await update_book_progress(session, book_id, user_id, current_page)
+        book: Optional[Book] = await update_book_progress(session, book_id, user_id, current_page)
     except Exception as e:
+        raise HTTPException(status_code=404, detail={
+            "status": "error",
+            "data": None,
+            "detail": str(e)
+        })
+    if book:
+        return {'status': 'success',
+                'data': book,
+                'detail': 'Книга изменена'}
+    else:
         return {'status': 'error',
                 'data': None,
-                'detail': str(e)}
-    return {'status': 'error',
-            'data': book,
-            'detail': None}
+                'detail': 'Книга не найлена'}
+
+
+@router.delete('/delete/{book_id}')
+async def delete_book(tg_id: int, book_id: int,
+                      session: AsyncSession = Depends(get_async_session)):
+    try:
+        await delete_book_from_db(session, book_id, tg_id)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail={
+            "status": "error",
+            "data": None,
+            "detail": str(e)
+        })
+    return {'status': 'success',
+            'data': None,
+            'detail': 'Книга была удалена'}
