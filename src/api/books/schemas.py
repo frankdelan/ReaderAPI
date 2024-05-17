@@ -17,6 +17,9 @@ class ProgressSchema(BaseModel):
     current_pages: int
     start_reading_date: date
 
+    class Config:
+        from_attributes = True
+
 
 class BookAdd(BaseModel):
     title: str
@@ -28,3 +31,6 @@ class BookSchema(BookAdd):
     progress: ProgressSchema
     status: BookStatus
     id: int
+
+    class Config:
+        from_attributes = True

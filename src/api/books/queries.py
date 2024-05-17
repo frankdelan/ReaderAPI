@@ -1,16 +1,16 @@
 from datetime import datetime
 
-from sqlalchemy import select, delete
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.books.models import Book, Progress
-from api.books.schemas import BookAdd, BookSchema
+from api.books.schemas import BookAdd
 from api.books.utils import convert_data
 
 
 async def get_books_from_db(session: AsyncSession,
-                            user_id: int) -> list[BookSchema]:
+                            user_id: int) -> list[Book]:
     query = (select(Book.id, Book.title, Book.author, Book.volume, Book.status,
                     Progress.current_pages, Progress.start_reading_date)
              .join(Progress, Book.id == Progress.book_id)
@@ -22,7 +22,7 @@ async def get_books_from_db(session: AsyncSession,
 
 
 async def get_book_from_db(session: AsyncSession,
-                           book_id: int, tg_id: int) -> BookSchema:
+                           book_id: int, tg_id: int) -> Book:
     query = (select(Book.id, Book.title, Book.author, Book.volume, Book.status,
                     Progress.current_pages, Progress.start_reading_date)
              .join(Progress)
@@ -71,6 +71,5 @@ async def delete_book_from_db(session: AsyncSession,
     query = select(Book).where((Book.id == book_id) & (Book.user_id == tg_id))
     data = await session.execute(query)
     book = data.scalar()
-    await session.delete(book.progress)
-    await session.delete(book)
+    session.delete(book)
     await session.commit()
