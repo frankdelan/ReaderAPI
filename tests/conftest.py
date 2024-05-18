@@ -22,5 +22,5 @@ async def setup_database():
 
 @pytest.fixture
 async def get_client():
-    async with AsyncClient(app=app, base_url="http://127.0.0.1:8000", params={"user_id": USER_ID}) as client:
+    async with AsyncClient(app=app, base_url="http://127.0.0.1:8000") as client:
         yield client

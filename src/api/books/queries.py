@@ -54,7 +54,7 @@ async def update_book_progress(session: AsyncSession,
     data = await session.execute(query)
     book = data.scalar()
     if book:
-        if book.volume >= page:
+        if book.volume > page:
             book.progress.current_pages = page
         else:
             book.progress.current_pages = book.volume
