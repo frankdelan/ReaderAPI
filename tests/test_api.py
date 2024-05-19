@@ -2,6 +2,7 @@ from typing import Optional
 
 import pytest
 from fastapi.encoders import jsonable_encoder
+from fastapi import HTTPException
 
 from api.books.models import Book
 from api.books.queries import insert_book, get_books_from_db, get_book_from_db
@@ -10,29 +11,26 @@ from database import async_session_factory
 from tests.conftest import USER_ID
 
 
-async def form_db_response(data, detail: Optional[str] = None):
-    return {"status": "success", "data": jsonable_encoder(data), "detail": detail}
+async def form_db_response(data: BookSchema, detail: Optional[str] = None):
+    return {"status": "success",
+            "data": jsonable_encoder(data),
+            "detail": detail}
 
 
-class TestAPI:
+class TestSuccessAPI:
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("data, user_id", [
-        (BookAdd(title="Test1", author="Tester1", volume=100), USER_ID)
-    ])
-    async def test_book_by_id(self, get_client, data, user_id):
-        async with async_session_factory() as session:
-            result: Book = await insert_book(session, data, user_id)
-            book: BookSchema = BookSchema.from_orm(result)
-        response = await get_client.get(f"/book/{book.id}?user_id={user_id}")
+    @pytest.mark.parametrize("user_id", [USER_ID])
+    async def test_book_by_id(self, get_client, user_id, add_test_data):
+        response = await get_client.get(f"/book/{add_test_data.id}?user_id={user_id}")
         assert response.status_code == 200
-        assert response.json() == await form_db_response(book)
+        assert response.json() == await form_db_response(add_test_data)
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("user_id", [USER_ID])
     async def test_book_list(self, get_client, user_id):
         async with async_session_factory() as session:
             result: list[Book] = await get_books_from_db(session, user_id)
-            books: list[BookSchema] = list(map(lambda x: BookSchema.from_orm(x), result))
+            books: list[BookSchema] = list(map(lambda x: BookSchema.model_validate(x), result))
         response = await get_client.get(f"/book/list?user_id={user_id}")
         assert response.status_code == 200
         assert response.json() == {"status":"success","data":jsonable_encoder(books),"detail":None}
@@ -49,7 +47,7 @@ class TestAPI:
         json_data = response.json()
         async with async_session_factory() as session:
             result: Book = await get_book_from_db(session, json_data['data']["id"], user_id)
-            book: BookSchema = BookSchema.from_orm(result)
+            book: BookSchema = BookSchema.model_validate(result)
         assert response.status_code == 200
         assert json_data == await form_db_response(book)
 
@@ -62,7 +60,7 @@ class TestAPI:
         json_data = response.json()
         async with async_session_factory() as session:
             result: Book = await get_book_from_db(session, json_data['data']["id"], user_id)
-            book: BookSchema = BookSchema.from_orm(result)
+            book: BookSchema = BookSchema.model_validate(result)
         assert response.status_code == 200
         assert json_data == await form_db_response(book, 'Книга изменена')
 
@@ -71,3 +69,21 @@ class TestAPI:
     async def test_delete_book(self, get_client, book_id, user_id):
         response = await get_client.delete(f"/book/delete/{book_id}?user_id={user_id}")
         assert response.status_code == 200
+
+
+class TestErrorAPI:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("book_id, user_id", [
+        (1, 2), (10, 1), ('5', '5')
+    ])
+    async def test_book_by_id(self, get_client, book_id, user_id, add_test_data):
+        response = await get_client.get(f"/book/{book_id}?user_id={user_id}")
+        assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("user_id", [
+        5, '5'
+    ])
+    async def test_book_list(self, get_client, user_id):
+        response = await get_client.get(f"/book/list?user_id={user_id}")
+        assert response.status_code == 404

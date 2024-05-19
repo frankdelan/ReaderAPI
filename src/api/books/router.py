@@ -16,49 +16,40 @@ router = APIRouter(
 )
 
 
-async def handle_exception(e: Exception) -> HTTPException:
-    """Функция для обработки исключений и возвращения стандартного ответа."""
-    return HTTPException(status_code=404, detail={
-        "status": "error",
-        "data": None,
-        "detail": str(e)
-    })
-
-
 @router.get('/list', response_model=dict[str, str | list[BookSchema] | None])
 async def get_books(user_id: int,
                     session: AsyncSession = Depends(get_async_session)):
     try:
-        books: list[Book] = await get_books_from_db(session, user_id)
+        books: list[Optional[Book]] = await get_books_from_db(session, user_id)
         return {'status': 'success',
                 'data': books,
                 'detail': None}
     except Exception as e:
-        await handle_exception(e)
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.get('/{book_id}', response_model=dict[str, str | BookSchema | None])
 async def get_book_by_id(book_id: int, user_id: int,
                          session: AsyncSession = Depends(get_async_session)):
     try:
-        book: Book = await get_book_from_db(session, book_id, user_id)
+        book: Optional[Book] = await get_book_from_db(session, book_id, user_id)
         return {'status': 'success',
                 'data': book,
                 'detail': None}
     except Exception as e:
-        await handle_exception(e)
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.post('/add', response_model=dict[str, str | BookSchema | None])
 async def add_book(book: BookAdd, user_id: int,
                    session: AsyncSession = Depends(get_async_session)):
     try:
-        book: Optional[Book] = await insert_book(session, book, user_id)
+        book_data: Optional[Book] = await insert_book(session, book, user_id)
         return {'status': 'success',
-                'data': book,
+                'data': book_data,
                 'detail': None}
     except Exception as e:
-        await handle_exception(e)
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.patch('/progress/{book_id}', response_model=dict[str, str | BookSchema | None])
@@ -75,7 +66,7 @@ async def change_book_progress(book_id: int, user_id: int, current_page: int,
                     'data': None,
                     'detail': 'Книга не найлена'}
     except Exception as e:
-        await handle_exception(e)
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.delete('/delete/{book_id}')
@@ -87,4 +78,4 @@ async def delete_book(user_id: int, book_id: int,
                 'data': None,
                 'detail': 'Книга была удалена'}
     except Exception as e:
-        await handle_exception(e)
+        raise HTTPException(status_code=404, detail=str(e))

@@ -1,7 +1,8 @@
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.books.models import Book, Progress
@@ -18,18 +19,22 @@ async def get_books_from_db(session: AsyncSession,
     result = await session.execute(query)
     data = result.mappings().all()
     books = [convert_data(item) for item in data]
+    if not books:
+        raise NoResultFound("Книги не найдены")
     return books
 
 
 async def get_book_from_db(session: AsyncSession,
-                           book_id: int, tg_id: int) -> Book:
+                           book_id: int, tg_id: int) -> Optional[Book]:
     query = (select(Book.id, Book.title, Book.author, Book.volume, Book.status,
                     Progress.current_pages, Progress.start_reading_date)
              .join(Progress)
              .where((Book.id == book_id) & (Book.user_id == tg_id)))
     result = await session.execute(query)
-    data = result.mappings().one()
+    data = result.mappings().one_or_none()
     book = convert_data(data)
+    if not book:
+        raise NoResultFound("Книга не найдена")
     return book
 
 
