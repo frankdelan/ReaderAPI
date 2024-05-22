@@ -29,7 +29,7 @@ class Progress(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
-    book_id: Mapped[int] = mapped_column(ForeignKey('book.id', ondelete="CASCADE"))
+    book_id: Mapped[int] = mapped_column(ForeignKey('book.id'))
     book: Mapped["Book"] = relationship(back_populates="progress")
 
     current_pages: Mapped[int] = mapped_column(default=0)

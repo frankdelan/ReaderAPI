@@ -40,7 +40,7 @@ async def get_book_from_db(session: AsyncSession,
 
 async def insert_book(session: AsyncSession,
                       data: BookAdd, user_id: int) -> Book | None:
-    book = Book(**data.dict(), status='Читает', user_id=user_id)
+    book = Book(**data.model_dump(), status='Читает', user_id=user_id)
     progress = Progress(book=book, current_pages=0, start_reading_date=datetime.now().date())
     book.progress = progress
     try:
@@ -76,5 +76,6 @@ async def delete_book_from_db(session: AsyncSession,
     query = select(Book).where((Book.id == book_id) & (Book.user_id == tg_id))
     data = await session.execute(query)
     book = data.scalar()
-    session.delete(book)
+    await session.delete(book.progress)
+    await session.delete(book)
     await session.commit()

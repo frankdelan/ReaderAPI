@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from enum import Enum
 
 
@@ -14,11 +14,10 @@ class BookStatus(str, Enum):
 
 
 class ProgressSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     current_pages: int
     start_reading_date: date
-
-    class Config:
-        from_attributes = True
 
 
 class BookAdd(BaseModel):
@@ -28,9 +27,8 @@ class BookAdd(BaseModel):
 
 
 class BookSchema(BookAdd):
+    model_config = ConfigDict(from_attributes=True)
+
     progress: ProgressSchema
     status: BookStatus
     id: int
-
-    class Config:
-        from_attributes = True
