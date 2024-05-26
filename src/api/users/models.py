@@ -9,6 +9,6 @@ class User(Base):
     __table_args__ = {'extend_existing': True}
 
     tg_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    username: Mapped[str] = mapped_column(unique=True)
+    password: Mapped[str]
 
     book: Mapped[list["Book"]] = relationship(back_populates="user", lazy='selectin')

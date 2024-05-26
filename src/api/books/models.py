@@ -20,7 +20,7 @@ class Book(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey('user.tg_id'))
     user: Mapped["User"] = relationship(back_populates="book")
 
-    progress: Mapped["Progress"] = relationship(back_populates="book", lazy='selectin')
+    progress: Mapped["Progress"] = relationship(back_populates="book", lazy='selectin', cascade="all, delete-orphan")
 
 
 class Progress(Base):

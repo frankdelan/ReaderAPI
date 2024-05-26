@@ -4,11 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.books.models import Book
-from api.books.queries import get_books_from_db, get_book_from_db, insert_book, update_book_progress, \
-    delete_book_from_db
 from database import get_async_session
 from api.books.schemas import BookSchema, BookAdd
-
+from api.services.books import BookService
 
 router = APIRouter(
     prefix='/book',
@@ -20,7 +18,7 @@ router = APIRouter(
 async def get_books(user_id: int,
                     session: AsyncSession = Depends(get_async_session)):
     try:
-        books: list[Optional[Book]] = await get_books_from_db(session, user_id)
+        books: list[Optional[Book]] = await BookService.get_book_list(session, user_id)
         return {'status': 'success',
                 'data': books,
                 'detail': None}
@@ -32,7 +30,7 @@ async def get_books(user_id: int,
 async def get_book_by_id(book_id: int, user_id: int,
                          session: AsyncSession = Depends(get_async_session)):
     try:
-        book: Optional[Book] = await get_book_from_db(session, book_id, user_id)
+        book: Optional[Book] = await BookService.get_book(session, user_id, book_id )
         return {'status': 'success',
                 'data': book,
                 'detail': None}
@@ -44,7 +42,7 @@ async def get_book_by_id(book_id: int, user_id: int,
 async def add_book(book: BookAdd, user_id: int,
                    session: AsyncSession = Depends(get_async_session)):
     try:
-        book_data: Optional[Book] = await insert_book(session, book, user_id)
+        book_data: Optional[Book] = await BookService.add_book(session, book, user_id)
         return {'status': 'success',
                 'data': book_data,
                 'detail': None}
@@ -56,7 +54,7 @@ async def add_book(book: BookAdd, user_id: int,
 async def change_book_progress(book_id: int, user_id: int, current_page: int,
                                session: AsyncSession = Depends(get_async_session)):
     try:
-        book: Optional[Book] = await update_book_progress(session, book_id, user_id, current_page)
+        book: Optional[Book] = await BookService.update_book(session, user_id, book_id , current_page)
         if book:
             return {'status': 'success',
                     'data': book,
@@ -73,9 +71,9 @@ async def change_book_progress(book_id: int, user_id: int, current_page: int,
 async def delete_book(user_id: int, book_id: int,
                       session: AsyncSession = Depends(get_async_session)):
     try:
-        await delete_book_from_db(session, book_id, user_id)
+        book_id: int = await BookService.delete_book(session, user_id, book_id )
         return {'status': 'success',
                 'data': None,
-                'detail': 'Книга была удалена'}
+                'detail': f'{book_id} книга была удалена'}
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
