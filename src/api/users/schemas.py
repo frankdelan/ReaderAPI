@@ -1,8 +1,6 @@
 from pydantic import BaseModel
 
 
-class RegisterUser(BaseModel):
-    tg_id: int
-    username: str
-
-
+class AuthUser(BaseModel):
+    user_id: int
+    password: str

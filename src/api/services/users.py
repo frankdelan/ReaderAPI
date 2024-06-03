@@ -1,17 +1,17 @@
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Type
 
-from api.users.models import User
+from fastapi import Depends
+
 from api.repositories.users import UserRepository
+from api.users.schemas import AuthUser
 
 
 class UserService:
-    @staticmethod
-    async def add_user(session: AsyncSession, user_id: int, password: str) -> User:
-        user: User = User(tg_id=user_id, password=password)
-        repository = UserRepository(session, User)
-        return await repository.add(user)
+    def __init__(self, repository: UserRepository = Depends(UserRepository)):
+        self.repository: UserRepository = repository
 
-    @staticmethod
-    async def get_password(session: AsyncSession, user_id: int) -> str:
-        repository = UserRepository(session, User)
-        return await repository.get(user_id)
+    async def add_user(self, data: AuthUser):
+        return await self.repository.create(data.model_dump())
+
+    async def get_user_password(self, user_id: int) -> str:
+        return await self.repository.get_password(user_id)

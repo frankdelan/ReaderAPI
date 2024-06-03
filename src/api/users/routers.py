@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.services.users import UserService
-from database import get_async_session
+from api.users.schemas import AuthUser
 from api.users.utils import hash_password, verify_password
 
 router = APIRouter(
@@ -12,11 +11,11 @@ router = APIRouter(
 
 
 @router.post('/register')
-async def register_user(user_id: int, password: str,
-                        session: AsyncSession = Depends(get_async_session)):
-    hashed_password: str = await hash_password(password)
+async def register_user(data: AuthUser,
+                        user_service: UserService = Depends(UserService)):
+    data.password = await hash_password(data.password)
     try:
-        await UserService.add_user(session, user_id, hashed_password)
+        await user_service.add_user(data)
         return {'status': 'success',
                 'data': None,
                 'detail': 'Пользователь зарегистрирован'}
@@ -25,10 +24,10 @@ async def register_user(user_id: int, password: str,
 
 
 @router.post('/auth')
-async def auth_user(user_id: int, password: str,
-                    session: AsyncSession = Depends(get_async_session)):
-    hashed_password: str = await UserService.get_password(session, user_id)
-    if await verify_password(password, hashed_password):
+async def auth_user(data: AuthUser,
+                    user_service: UserService = Depends(UserService)):
+    hashed_password: str = await user_service.get_user_password(data.user_id)
+    if await verify_password(data.password, hashed_password):
         return {'status': 'success',
                 'data': None,
                 'detail': 'Пользователь прошел аутентификацию'}

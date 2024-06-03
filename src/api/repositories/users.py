@@ -1,9 +1,14 @@
 from sqlalchemy import select
 from api.repositories.base import BaseRepository
+from api.users.models import User
+from database import async_session_factory
 
 
 class UserRepository(BaseRepository):
-    async def get(self, user_id):
-        query = select(self.model.password).where(self.model.tg_id == user_id)
-        result = await self.session.execute(query)
-        return result.scalar_one_or_none()
+    model = User
+
+    async def get_password(self, user_id: int):
+        async with async_session_factory() as session:
+            query = select(self.model.password).where(self.model.user_id == user_id)
+            result = await session.execute(query)
+            return result.scalar_one_or_none()

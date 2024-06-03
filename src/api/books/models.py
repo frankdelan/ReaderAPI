@@ -17,7 +17,7 @@ class Book(Base):
     volume: Mapped[int]
     status: Mapped[str] = mapped_column(default='Читает')
 
-    user_id: Mapped[int] = mapped_column(ForeignKey('user.tg_id'))
+    user_id: Mapped[int] = mapped_column(ForeignKey('user.user_id'))
     user: Mapped["User"] = relationship(back_populates="book")
 
     progress: Mapped["Progress"] = relationship(back_populates="book", lazy='selectin', cascade="all, delete-orphan")
